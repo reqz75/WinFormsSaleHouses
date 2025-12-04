@@ -1,0 +1,167 @@
+﻿# Документация к классу DatabaseHelper
+
+## Общее описание
+
+**DatabaseHelper** - это вспомогательный класс для работы с базой данных SQL Server в приложениях Windows Forms. Класс предоставляет упрощенный интерфейс для выполнения SQL-запросов и управления подключениями к базе данных.
+
+## Назначение
+
+Класс предназначен для:
+- Централизации логики работы с базой данных
+- Упрощения выполнения SQL-запросов
+- Обеспечения безопасного подключения и закрытия соединений
+- Предотвращения утечек ресурсов через использование `using` statements
+
+## Конструктор
+
+### `DatabaseHelper()`
+Инициализирует новый экземпляр класса, загружая строку подключения из файла конфигурации.
+
+**Исключения:**
+- `ConfigurationErrorsException` - если строка подключения "DefaultConnection" не найдена в конфигурации
+
+## Методы
+
+### `ExecuteNonQuery(string query, SqlParameter[] parameters = null)`
+Выполняет SQL-команду, которая не возвращает данные (INSERT, UPDATE, DELETE).
+
+**Параметры:**
+- `query` (string) - SQL-запрос для выполнения
+- `parameters` (SqlParameter[]) - массив параметров для запроса (опционально)
+
+**Возвращает:**
+- `int` - количество затронутых строк
+
+**Исключения:**
+- `SqlException` - ошибка выполнения SQL-запроса
+- `InvalidOperationException` - ошибка подключения к базе данных
+
+**Пример использования:**
+```csharp
+string query = "UPDATE Properties SET IsAvailable = 0 WHERE Id = @Id";
+SqlParameter[] parameters = {
+    new SqlParameter("@Id", 123)
+};
+int rowsAffected = dbHelper.ExecuteNonQuery(query, parameters);
+```
+
+---
+
+### `ExecuteQuery(string query, SqlParameter[] parameters = null)`
+Выполняет SQL-запрос, возвращающий данные (SELECT).
+
+**Параметры:**
+- `query` (string) - SQL-запрос для выполнения
+- `parameters` (SqlParameter[]) - массив параметров для запроса (опционально)
+
+**Возвращает:**
+- `DataTable` - таблица с результатами запроса
+
+**Исключения:**
+- `SqlException` - ошибка выполнения SQL-запроса
+- `InvalidOperationException` - ошибка подключения к базе данных
+
+**Пример использования:**
+```csharp
+string query = "SELECT * FROM Properties WHERE IsAvailable = 1";
+DataTable properties = dbHelper.ExecuteQuery(query);
+```
+
+---
+
+### `ExecuteScalar(string query, SqlParameter[] parameters = null)`
+Выполняет SQL-запрос и возвращает первое значение первой строки результата.
+
+**Параметры:**
+- `query` (string) - SQL-запрос для выполнения
+- `parameters` (SqlParameter[]) - массив параметров для запроса (опционально)
+
+**Возвращает:**
+- `object` - скалярное значение или `null`, если результат пустой
+
+**Исключения:**
+- `SqlException` - ошибка выполнения SQL-запроса
+- `InvalidOperationException` - ошибка подключения к базе данных
+
+**Пример использования:**
+```csharp
+string query = "SELECT COUNT(*) FROM Properties";
+int count = Convert.ToInt32(dbHelper.ExecuteScalar(query));
+```
+
+## Особенности реализации
+
+### Управление ресурсами
+- Автоматическое закрытие соединений через `using` statements
+- Использование пула соединений SQL Server
+- Освобождение неуправляемых ресурсов
+
+### Безопасность
+- Поддержка параметризованных запросов для предотвращения SQL-инъекций
+- Безопасное хранение строки подключения в конфигурации
+
+## Требования к конфигурации
+
+### Файл App.config
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+    <connectionStrings>
+        <add name="DefaultConnection" 
+             connectionString="Server=(localdb)\MSSQLLocalDB;Database=YourDatabaseName;Integrated Security=True;"
+             providerName="System.Data.SqlClient"/>
+    </connectionStrings>
+</configuration>
+```
+
+### Необходимые NuGet пакеты
+- `System.Data.SqlClient`
+- `System.Configuration.ConfigurationManager`
+
+## Рекомендации по использованию
+
+1. **Для каждого репозитория создавайте отдельный класс**, использующий DatabaseHelper
+2. **Всегда используйте параметризованные запросы** при работе с пользовательским вводом
+3. **Обрабатывайте исключения** на уровне вызывающего кода
+4. **Используйте асинхронные версии методов** для операций, которые могут выполняться долго
+
+## Пример использования в репозитории
+
+```csharp
+public class PropertyRepository
+{
+    private DatabaseHelper dbHelper = new DatabaseHelper();
+    
+    public DataTable GetAvailableProperties()
+    {
+        string query = @"
+            SELECT Id, Address, Area, Condition, Price 
+            FROM Properties 
+            WHERE IsAvailable = 1
+            ORDER BY Price";
+            
+        return dbHelper.ExecuteQuery(query);
+    }
+}
+```
+
+## Ограничения
+
+1. Класс синхронный - для асинхронных операций требуется модификация
+2. Предназначен только для SQL Server
+3. Не поддерживает хранимые процедуры напрямую
+4. Требует наличия строки подключения "DefaultConnection" в конфигурации
+
+## Связанные классы
+
+- `SqlConnection` - управление подключением к базе данных
+- `SqlCommand` - выполнение SQL-команд
+- `SqlDataAdapter` - заполнение DataTable
+- `SqlParameter` - параметры для SQL-запросов
+
+## История изменений
+
+**Версия 1.0**
+- Базовая реализация трех основных методов
+- Поддержка параметризованных запросов
+- Автоматическое управление подключениями
