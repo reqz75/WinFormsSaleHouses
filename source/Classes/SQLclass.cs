@@ -71,4 +71,12 @@ public class DatabaseHelper
             }
         }
     }
+    
+    // Возвращает строку подключения к локальной базе данных SQL Server LocalDB
+
+    public string GetConnectionString()
+    {
+        return @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\Database1.mdf;Integrated Security=True;Connect Timeout=30";
+    }
+
 }
