@@ -71,7 +71,7 @@ namespace RealEstateApp
                     }
                     else
                     {
-                        FormClientProperties clientForm = new FormClientProperties(userId, fullName);
+                        FormClientProperties clientForm = new FormClientProperties();
                          clientForm.Show();
                     }
                 }
