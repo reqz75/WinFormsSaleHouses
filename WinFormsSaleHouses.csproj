@@ -117,15 +117,6 @@
     <EmbeddedResource Include="source\Forms\RegistrationForm.resx">
       <DependentUpon>RegistrationForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="source\Forms\FormCreateTransaction.resx">
-      <DependentUpon>FormCreateTransaction.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="source\Forms\FormClientProperties.resx">
-      <DependentUpon>FormClientProperties.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="source\Forms\LoginForm.resx">
-      <DependentUpon>LoginForm.cs</DependentUpon>
-    </EmbeddedResource>
     <None Include="Database1DataSet.xsc">
       <DependentUpon>Database1DataSet.xsd</DependentUpon>
     </None>
