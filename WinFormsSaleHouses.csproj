@@ -114,6 +114,9 @@
     <EmbeddedResource Include="source\Forms\Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="source\Forms\FormClientProperties.resx">
+      <DependentUpon>FormClientProperties.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="source\Forms\RegistrationForm.resx">
       <DependentUpon>RegistrationForm.cs</DependentUpon>
     </EmbeddedResource>

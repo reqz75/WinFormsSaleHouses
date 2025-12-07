@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Data;
 using System.Windows.Forms;
+using System.Data.SqlClient;
 
 namespace WinFormsSaleHouses
 {
     public partial class FormClientProperties : Form
     {
         private DatabaseHelper dbHelper = new DatabaseHelper();
+        private string currentSearchFilter = "";
 
         public FormClientProperties()
         {
@@ -26,11 +28,14 @@ namespace WinFormsSaleHouses
             btnRefresh.Click += BtnRefresh_Click;
             btnSort.Click += BtnSort_Click;
             btnBuy.Click += BtnBuy_Click;
+            btnSearch.Click += BtnSearch_Click;
+            btnClearSearch.Click += BtnClearSearch_Click;
+            txtSearchAddress.KeyPress += TxtSearchAddress_KeyPress;
             dgvProperties.CellDoubleClick += DgvProperties_CellDoubleClick;
             dgvProperties.SelectionChanged += DgvProperties_SelectionChanged;
         }
 
-        private void LoadAvailableProperties()
+        private void LoadAvailableProperties(string addressFilter = "")
         {
             try
             {
@@ -47,7 +52,19 @@ namespace WinFormsSaleHouses
                     FROM Properties 
                     WHERE IsAvailable = 1";
 
-                DataTable properties = dbHelper.ExecuteQuery(query);
+                SqlParameter[] parameters = null;
+
+                // Добавляем фильтр по адресу, если указан
+                if (!string.IsNullOrEmpty(addressFilter))
+                {
+                    query += " AND Address LIKE @AddressFilter";
+                    parameters = new SqlParameter[]
+                    {
+                        new SqlParameter("@AddressFilter", "%" + addressFilter + "%")
+                    };
+                }
+
+                DataTable properties = dbHelper.ExecuteQuery(query, parameters);
                 dgvProperties.DataSource = properties;
 
                 // Форматирование
@@ -59,6 +76,9 @@ namespace WinFormsSaleHouses
                 dgvProperties.Columns["CreatedAt"].DefaultCellStyle.Format = "dd.MM.yyyy";
 
                 lblStatus.Text = $"Найдено объектов: {properties.Rows.Count}";
+
+                // Сохраняем текущий фильтр
+                currentSearchFilter = addressFilter;
             }
             catch (Exception ex)
             {
@@ -73,6 +93,7 @@ namespace WinFormsSaleHouses
 
         private void BtnRefresh_Click(object sender, EventArgs e)
         {
+            txtSearchAddress.Clear();
             LoadAvailableProperties();
         }
 
@@ -80,6 +101,8 @@ namespace WinFormsSaleHouses
         {
             try
             {
+                Cursor = Cursors.WaitCursor;
+
                 string sortColumn = "";
                 string sortOrder = rbAsc.Checked ? "ASC" : "DESC";
 
@@ -91,7 +114,7 @@ namespace WinFormsSaleHouses
                     case 3: sortColumn = "Condition"; break;
                 }
 
-                string query = $@"
+                string query = @"
                     SELECT 
                         Id,
                         Address,
@@ -100,16 +123,56 @@ namespace WinFormsSaleHouses
                         Price,
                         CreatedAt
                     FROM Properties 
-                    WHERE IsAvailable = 1
-                    ORDER BY {sortColumn} {sortOrder}";
+                    WHERE IsAvailable = 1";
 
-                DataTable properties = dbHelper.ExecuteQuery(query);
+                SqlParameter[] parameters = null;
+
+                // Добавляем фильтр по адресу, если есть текущий поиск
+                if (!string.IsNullOrEmpty(currentSearchFilter))
+                {
+                    query += " AND Address LIKE @AddressFilter";
+                    parameters = new SqlParameter[]
+                    {
+                        new SqlParameter("@AddressFilter", "%" + currentSearchFilter + "%")
+                    };
+                }
+
+                // Добавляем сортировку
+                query += $" ORDER BY {sortColumn} {sortOrder}";
+
+                DataTable properties = dbHelper.ExecuteQuery(query, parameters);
                 dgvProperties.DataSource = properties;
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Ошибка сортировки: {ex.Message}", "Ошибка",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                Cursor = Cursors.Default;
+            }
+        }
+
+        private void BtnSearch_Click(object sender, EventArgs e)
+        {
+            string searchText = txtSearchAddress.Text.Trim();
+            LoadAvailableProperties(searchText);
+        }
+
+        private void BtnClearSearch_Click(object sender, EventArgs e)
+        {
+            txtSearchAddress.Clear();
+            LoadAvailableProperties();
+        }
+
+        private void TxtSearchAddress_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            // Поиск при нажатии Enter
+            if (e.KeyChar == (char)Keys.Enter)
+            {
+                BtnSearch_Click(sender, e);
+                e.Handled = true;
             }
         }
 
@@ -150,7 +213,7 @@ namespace WinFormsSaleHouses
                 form.ShowDialog();
 
                 // Обновляем список после сделки
-                LoadAvailableProperties();
+                LoadAvailableProperties(currentSearchFilter);
             }
         }
 
