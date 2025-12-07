@@ -9,11 +9,11 @@ public class DatabaseHelper
 
     public DatabaseHelper()
     {
-        // Используем строку подключения из вопроса
+        
         connectionString = @"Data Source=(LocalDB)\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\Database1.mdf;Integrated Security=True;Connect Timeout=30";
     }
 
-    // Метод для выполнения запросов без возврата данных
+    
     public int ExecuteNonQuery(string query, SqlParameter[] parameters = null)
     {
         using (SqlConnection connection = new SqlConnection(connectionString))
@@ -30,7 +30,7 @@ public class DatabaseHelper
         }
     }
 
-    // Метод для получения данных
+   
     public DataTable ExecuteQuery(string query, SqlParameter[] parameters = null)
     {
         DataTable dataTable = new DataTable();
@@ -55,7 +55,7 @@ public class DatabaseHelper
         return dataTable;
     }
 
-    // Метод для получения скалярного значения
+   
     public object ExecuteScalar(string query, SqlParameter[] parameters = null)
     {
         using (SqlConnection connection = new SqlConnection(connectionString))
@@ -72,7 +72,7 @@ public class DatabaseHelper
         }
     }
     
-    // Возвращает строку подключения к локальной базе данных SQL Server LocalDB
+   
 
     public string GetConnectionString()
     {

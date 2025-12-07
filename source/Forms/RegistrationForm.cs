@@ -19,12 +19,12 @@ namespace RealEstateApp
 
         private void RegistrationForm_Load(object sender, EventArgs e)
         {
-            cmbUserType.SelectedIndex = 0; // Устанавливаем значение по умолчанию
+            cmbUserType.SelectedIndex = 0; 
         }
 
         private void btnRegister_Click(object sender, EventArgs e)
         {
-            // Валидация данных
+           
             if (!ValidateInput())
                 return;
 
@@ -35,7 +35,7 @@ namespace RealEstateApp
             string phoneNumber = txtPhoneNumber.Text.Trim();
             string userType = cmbUserType.SelectedItem.ToString();
 
-            // Проверка совпадения паролей
+            
             if (password != confirmPassword)
             {
                 MessageBox.Show("Пароли не совпадают!", "Ошибка",
@@ -46,7 +46,7 @@ namespace RealEstateApp
 
             try
             {
-                // Проверяем, существует ли пользователь с таким именем
+               
                 string checkUserQuery = "SELECT COUNT(*) FROM (SELECT Username FROM Realtors UNION SELECT Username FROM Clients) AS AllUsers WHERE Username = @Username";
                 SqlParameter[] checkParams = { new SqlParameter("@Username", username) };
 
@@ -60,16 +60,16 @@ namespace RealEstateApp
                     return;
                 }
 
-                // Определяем таблицу для вставки
+                
                 string tableName = userType == "Риелтор" ? "Realtors" : "Clients";
 
-                // В реальном приложении пароль должен хэшироваться!
+                
                 string query = $@"INSERT INTO {tableName} (Username, PasswordHash, FullName, PhoneNumber) 
                                  VALUES (@Username, @Password, @FullName, @PhoneNumber)";
 
                 SqlParameter[] parameters = {
                     new SqlParameter("@Username", username),
-                    new SqlParameter("@Password", password), // В реальном приложении: PasswordHasher.Hash(password)
+                    new SqlParameter("@Password", password), 
                     new SqlParameter("@FullName", fullName),
                     new SqlParameter("@PhoneNumber", phoneNumber)
                 };
@@ -152,14 +152,14 @@ namespace RealEstateApp
 
         private void btnCancel_Click(object sender, EventArgs e)
         {
-            // Возвращаемся на форму логина
+            
             this.DialogResult = DialogResult.Cancel;
             this.Close();
         }
 
         private void txtPassword_TextChanged(object sender, EventArgs e)
         {
-            // Обновляем индикатор сложности пароля
+            
             UpdatePasswordStrength();
         }
 
@@ -200,7 +200,7 @@ namespace RealEstateApp
 
         private void txtPhoneNumber_KeyPress(object sender, KeyPressEventArgs e)
         {
-            // Разрешаем только цифры, пробел, +, - и управляющие символы
+          
             if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar) &&
                 e.KeyChar != ' ' && e.KeyChar != '+' && e.KeyChar != '-' &&
                 e.KeyChar != '(' && e.KeyChar != ')')
@@ -211,7 +211,7 @@ namespace RealEstateApp
 
         private void chkShowPassword_CheckedChanged(object sender, EventArgs e)
         {
-            // Показывать/скрывать пароль
+            
             if (chkShowPassword.Checked)
             {
                 txtPassword.PasswordChar = '\0';
@@ -224,7 +224,7 @@ namespace RealEstateApp
             }
         }
 
-        // ДОБАВЛЕННЫЙ МЕТОД, который был в RegistrationForm.Designer.cs
+        
         private void linkTerms_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
         {
             MessageBox.Show("Регистрируясь в системе, вы соглашаетесь с условиями использования и политикой конфиденциальности.",

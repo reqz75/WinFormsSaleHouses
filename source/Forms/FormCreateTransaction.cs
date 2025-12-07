@@ -28,25 +28,25 @@ namespace WinFormsSaleHouses
 
         private void InitializeForm()
         {
-            // Заполняем информацию о недвижимости
+            
             lblPropertyInfo.Text = $"Объект: {propertyAddress}\nБазовая цена: {propertyPrice:C2}";
 
-            // Загружаем клиентов
+            
             LoadClients();
 
-            // Загружаем риелторов
+            
             LoadRealtors();
 
-            // Устанавливаем текущую дату
+            
             dtpTransactionDate.Value = DateTime.Now;
 
-            // Устанавливаем начальную сумму сделки
+            
             txtFinalAmount.Text = propertyPrice.ToString();
 
-            // Рассчитываем комиссию (5%)
+            
             CalculateCommission();
 
-            // Привязка событий
+          
             txtFinalAmount.TextChanged += TxtFinalAmount_TextChanged;
             btnCreate.Click += BtnCreate_Click;
             btnCancel.Click += BtnCancel_Click;
@@ -97,7 +97,7 @@ namespace WinFormsSaleHouses
         {
             if (decimal.TryParse(txtFinalAmount.Text, out decimal amount) && amount > 0)
             {
-                // Комиссия 5% от суммы сделки
+                
                 decimal commission = amount * 0.05m;
                 txtCommission.Text = commission.ToString("F2");
             }
@@ -105,7 +105,7 @@ namespace WinFormsSaleHouses
 
         private bool ValidateInput()
         {
-            // Проверка покупателя
+            
             if (cmbBuyer.SelectedValue == null)
             {
                 MessageBox.Show("Выберите покупателя", "Внимание",
@@ -114,7 +114,7 @@ namespace WinFormsSaleHouses
                 return false;
             }
 
-            // Проверка риелтора
+          
             if (cmbRealtor.SelectedValue == null)
             {
                 MessageBox.Show("Выберите риелтора", "Внимание",
@@ -123,7 +123,7 @@ namespace WinFormsSaleHouses
                 return false;
             }
 
-            // Проверка суммы сделки
+            
             if (string.IsNullOrWhiteSpace(txtFinalAmount.Text))
             {
                 MessageBox.Show("Введите сумму сделки", "Внимание",
@@ -141,7 +141,7 @@ namespace WinFormsSaleHouses
                 return false;
             }
 
-            // Проверка даты
+           
             if (dtpTransactionDate.Value > DateTime.Now)
             {
                 DialogResult result = MessageBox.Show("Дата сделки в будущем. Продолжить?",
@@ -162,14 +162,14 @@ namespace WinFormsSaleHouses
             {
                 Cursor = Cursors.WaitCursor;
 
-                // Получаем данные для документа
+               
                 string buyerName = cmbBuyer.Text;
                 string realtorName = cmbRealtor.Text;
                 decimal finalAmount = decimal.Parse(txtFinalAmount.Text);
                 decimal commission = decimal.Parse(txtCommission.Text);
                 DateTime transactionDate = dtpTransactionDate.Value;
 
-                // Начинаем транзакцию
+              
                 using (SqlConnection connection = new SqlConnection(dbHelper.GetConnectionString()))
                 {
                     connection.Open();
@@ -177,7 +177,7 @@ namespace WinFormsSaleHouses
 
                     try
                     {
-                        // 1. Создаем сделку
+                       
                         string createTransactionQuery = @"
                             INSERT INTO Transactions 
                                 (TransactionDate, PropertyId, BuyerId, RealtorId, FinalAmount, Commission) 
@@ -193,7 +193,7 @@ namespace WinFormsSaleHouses
                         command.Parameters.AddWithValue("@Commission", commission);
                         command.ExecuteNonQuery();
 
-                        // 2. Обновляем статус недвижимости
+                      
                         string updatePropertyQuery = "UPDATE Properties SET IsAvailable = 0 WHERE Id = @PropertyId";
                         command.CommandText = updatePropertyQuery;
                         command.Parameters.Clear();
@@ -202,7 +202,7 @@ namespace WinFormsSaleHouses
 
                         transaction.Commit();
 
-                        // 3. Генерируем Word-документ
+                       
                         GenerateTransactionDocument(
                             buyerName,
                             realtorName,
@@ -245,26 +245,26 @@ namespace WinFormsSaleHouses
         {
             try
             {
-                // Создаем папку для документов, если ее нет
+               
                 string documentsFolder = Path.Combine(Application.StartupPath, "Документы");
                 if (!Directory.Exists(documentsFolder))
                 {
                     Directory.CreateDirectory(documentsFolder);
                 }
 
-                // Генерируем имя файла
+             
                 string fileName = $"Сделка_{propertyAddress.Replace(" ", "_").Replace(",", "")}_{DateTime.Now:yyyyMMdd_HHmmss}.docx";
                 string filePath = Path.Combine(documentsFolder, fileName);
 
-                // Создаем Word-документ
+                
                 using (WordprocessingDocument wordDocument = WordprocessingDocument.Create(filePath, WordprocessingDocumentType.Document))
                 {
-                    // Добавляем основную часть документа
+                   
                     MainDocumentPart mainPart = wordDocument.AddMainDocumentPart();
                     mainPart.Document = new Document();
                     Body body = new Body();
 
-                    // Заголовок
+                   
                     Paragraph titleParagraph = new Paragraph();
                     Run titleRun = new Run();
                     Text titleText = new Text("ДОГОВОР КУПЛИ-ПРОДАЖИ НЕДВИЖИМОСТИ");
@@ -277,10 +277,10 @@ namespace WinFormsSaleHouses
                     titleParagraph.Append(titleRun);
                     body.Append(titleParagraph);
 
-                    // Пустая строка
+                   
                     body.Append(new Paragraph(new Run(new Text(""))));
 
-                    // Даты
+                 
                     Paragraph dateParagraph = new Paragraph();
                     Run dateRun = new Run();
                     Text dateText = new Text($"Дата заключения сделки: {transactionDate:dd.MM.yyyy}");
@@ -288,13 +288,13 @@ namespace WinFormsSaleHouses
                     dateParagraph.Append(dateRun);
                     body.Append(dateParagraph);
 
-                    // Пустая строка
+                   
                     body.Append(new Paragraph(new Run(new Text(""))));
 
-                    // Информация о сделке в таблице
+                   
                     Table table = new Table();
 
-                    // Настройки таблицы
+                   
                     TableProperties tableProperties = new TableProperties(
                         new TableBorders(
                             new TopBorder() { Val = new EnumValue<BorderValues>(BorderValues.Single), Size = 4 },
@@ -307,7 +307,7 @@ namespace WinFormsSaleHouses
                     );
                     table.AppendChild(tableProperties);
 
-                    // Добавляем строки с информацией
+                   
                     AddTableRow(table, "Покупатель:", buyerName);
                     AddTableRow(table, "Риелтор:", realtorName);
                     AddTableRow(table, "Объект недвижимости:", propertyAddress);
@@ -317,10 +317,10 @@ namespace WinFormsSaleHouses
 
                     body.Append(table);
 
-                    // Пустая строка
+                    
                     body.Append(new Paragraph(new Run(new Text(""))));
 
-                    // Условия сделки
+                  
                     Paragraph termsParagraph = new Paragraph();
                     Run termsRun = new Run();
                     Text termsText = new Text("Условия сделки:\n" +
@@ -332,10 +332,10 @@ namespace WinFormsSaleHouses
                     termsParagraph.Append(termsRun);
                     body.Append(termsParagraph);
 
-                    // Пустая строка
+                   
                     body.Append(new Paragraph(new Run(new Text(""))));
 
-                    // Подписи
+                  
                     Paragraph signaturesParagraph = new Paragraph();
                     Run signaturesRun = new Run();
                     Text signaturesText = new Text("Подписи сторон:\n\n" +
@@ -346,12 +346,12 @@ namespace WinFormsSaleHouses
                     signaturesParagraph.Append(signaturesRun);
                     body.Append(signaturesParagraph);
 
-                    // Добавляем тело к документу
+                    
                     mainPart.Document.Append(body);
                     mainPart.Document.Save();
                 }
 
-                // Показываем сообщение об успешном создании
+                
                 MessageBox.Show($"Документ сохранен по пути:\n{filePath}", "Документ создан",
                     MessageBoxButtons.OK, MessageBoxIcon.Information);
 
@@ -360,7 +360,7 @@ namespace WinFormsSaleHouses
             {
                 MessageBox.Show($"Ошибка при создании документа: {ex.Message}", "Ошибка",
                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                // Не прерываем выполнение, так как сделка уже создана
+                
             }
         }
 

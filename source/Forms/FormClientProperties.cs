@@ -18,13 +18,13 @@ namespace WinFormsSaleHouses
 
         private void InitializeForm()
         {
-            // Загружаем доступные дома
+           
             LoadAvailableProperties();
 
-            // Настройка сортировки
+           
             cmbSortBy.SelectedIndex = 0;
 
-            // Привязка событий
+           
             btnRefresh.Click += BtnRefresh_Click;
             btnSort.Click += BtnSort_Click;
             btnBuy.Click += BtnBuy_Click;
@@ -54,7 +54,7 @@ namespace WinFormsSaleHouses
 
                 SqlParameter[] parameters = null;
 
-                // Добавляем фильтр по адресу, если указан
+               
                 if (!string.IsNullOrEmpty(addressFilter))
                 {
                     query += " AND Address LIKE @AddressFilter";
@@ -67,7 +67,7 @@ namespace WinFormsSaleHouses
                 DataTable properties = dbHelper.ExecuteQuery(query, parameters);
                 dgvProperties.DataSource = properties;
 
-                // Форматирование
+              
                 dgvProperties.Columns["Id"].Visible = false;
                 dgvProperties.Columns["Price"].DefaultCellStyle.Format = "C2";
                 dgvProperties.Columns["Price"].DefaultCellStyle.Alignment = DataGridViewContentAlignment.MiddleRight;
@@ -77,7 +77,7 @@ namespace WinFormsSaleHouses
 
                 lblStatus.Text = $"Найдено объектов: {properties.Rows.Count}";
 
-                // Сохраняем текущий фильтр
+              
                 currentSearchFilter = addressFilter;
             }
             catch (Exception ex)
@@ -127,7 +127,7 @@ namespace WinFormsSaleHouses
 
                 SqlParameter[] parameters = null;
 
-                // Добавляем фильтр по адресу, если есть текущий поиск
+               
                 if (!string.IsNullOrEmpty(currentSearchFilter))
                 {
                     query += " AND Address LIKE @AddressFilter";
@@ -137,7 +137,7 @@ namespace WinFormsSaleHouses
                     };
                 }
 
-                // Добавляем сортировку
+               
                 query += $" ORDER BY {sortColumn} {sortOrder}";
 
                 DataTable properties = dbHelper.ExecuteQuery(query, parameters);
@@ -168,7 +168,7 @@ namespace WinFormsSaleHouses
 
         private void TxtSearchAddress_KeyPress(object sender, KeyPressEventArgs e)
         {
-            // Поиск при нажатии Enter
+           
             if (e.KeyChar == (char)Keys.Enter)
             {
                 BtnSearch_Click(sender, e);
@@ -208,11 +208,11 @@ namespace WinFormsSaleHouses
                 string address = row.Cells["Address"].Value.ToString();
                 decimal price = Convert.ToDecimal(row.Cells["Price"].Value);
 
-                // Открываем форму для создания сделки
+                
                 FormCreateTransaction form = new FormCreateTransaction(propertyId, address, price);
                 form.ShowDialog();
 
-                // Обновляем список после сделки
+               
                 LoadAvailableProperties(currentSearchFilter);
             }
         }

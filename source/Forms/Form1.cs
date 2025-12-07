@@ -18,26 +18,26 @@ namespace WinFormsSaleHouses
 
         private void InitializeCustomComponents()
         {
-            // Инициализация репозитория
+           
             propertyRepository = new PropertyRepository();
 
-            // Инициализация ToolTip
+           
             toolTip = new ToolTip();
 
-            // Настройка формы
+            
             this.Text = "Добавление недвижимости";
             this.StartPosition = FormStartPosition.CenterScreen;
 
-            // Настройка DataGridView
+            
             ConfigureDataGridView();
 
-            // Загрузка данных
+            
             LoadProperties();
 
-            // Настройка подсказок
+            
             SetupToolTips();
 
-            // Привязка событий
+           
             AttachEvents();
         }
 
@@ -49,7 +49,7 @@ namespace WinFormsSaleHouses
             dgvProperties.AllowUserToAddRows = false;
             dgvProperties.AllowUserToDeleteRows = false;
 
-            // Очистка существующих колонок и добавление своих
+           
             dgvProperties.Columns.Clear();
 
             dgvProperties.Columns.Add("Id", "ID");
@@ -59,7 +59,7 @@ namespace WinFormsSaleHouses
             dgvProperties.Columns.Add("Price", "Цена");
             dgvProperties.Columns.Add("IsAvailable", "Доступно");
 
-            // Настройка ширины колонок
+           
             dgvProperties.Columns["Id"].Width = 50;
             dgvProperties.Columns["Address"].Width = 200;
             dgvProperties.Columns["Area"].Width = 80;
@@ -67,7 +67,7 @@ namespace WinFormsSaleHouses
             dgvProperties.Columns["Price"].Width = 100;
             dgvProperties.Columns["IsAvailable"].Width = 80;
 
-            // Форматирование
+          
             dgvProperties.Columns["Area"].DefaultCellStyle.Format = "N2";
             dgvProperties.Columns["Price"].DefaultCellStyle.Format = "C2";
         }
@@ -81,10 +81,10 @@ namespace WinFormsSaleHouses
 
                 DataTable properties = propertyRepository.GetAllProperties();
 
-                // Очистка существующих строк
+             
                 dgvProperties.Rows.Clear();
 
-                // Заполнение DataGridView
+               
                 foreach (DataRow row in properties.Rows)
                 {
                     dgvProperties.Rows.Add(
@@ -132,17 +132,17 @@ namespace WinFormsSaleHouses
         {
             try
             {
-                // Валидация
+                
                 if (!ValidateInput())
                     return;
 
-                // Подготовка данных
+           
                 string address = txtAddress.Text.Trim();
                 decimal area = decimal.Parse(txtArea.Text.Trim(), CultureInfo.InvariantCulture);
                 string condition = cmbCondition.SelectedItem.ToString();
                 decimal price = decimal.Parse(txtPrice.Text.Trim(), CultureInfo.InvariantCulture);
 
-                // Добавление в БД
+              
                 Cursor = Cursors.WaitCursor;
                 lblStatus.Text = "Добавление...";
 
@@ -182,7 +182,7 @@ namespace WinFormsSaleHouses
 
         private bool ValidateInput()
         {
-            // Проверка адреса
+           
             if (string.IsNullOrWhiteSpace(txtAddress.Text))
             {
                 MessageBox.Show("Введите адрес", "Внимание",
@@ -191,7 +191,7 @@ namespace WinFormsSaleHouses
                 return false;
             }
 
-            // Проверка площади
+         
             if (string.IsNullOrWhiteSpace(txtArea.Text))
             {
                 MessageBox.Show("Введите площадь", "Внимание",
@@ -209,7 +209,7 @@ namespace WinFormsSaleHouses
                 return false;
             }
 
-            // Проверка состояния
+          
             if (cmbCondition.SelectedItem == null)
             {
                 MessageBox.Show("Выберите состояние", "Внимание",
@@ -218,7 +218,7 @@ namespace WinFormsSaleHouses
                 return false;
             }
 
-            // Проверка цены
+           
             if (string.IsNullOrWhiteSpace(txtPrice.Text))
             {
                 MessageBox.Show("Введите цену", "Внимание",
@@ -261,14 +261,14 @@ namespace WinFormsSaleHouses
 
         private void NumericTextBox_KeyPress(object sender, KeyPressEventArgs e)
         {
-            // Разрешаем цифры, точку и управляющие символы
+          
             if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar) && e.KeyChar != '.')
             {
                 e.Handled = true;
                 return;
             }
 
-            // Проверяем только одну точку
+          
             if (e.KeyChar == '.' && (sender as TextBox).Text.Contains("."))
             {
                 e.Handled = true;
