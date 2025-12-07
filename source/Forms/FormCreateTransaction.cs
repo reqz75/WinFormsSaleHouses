@@ -1,7 +1,12 @@
+﻿
 ﻿using System;
 using System.Data;
 using System.Data.SqlClient;
 using System.Windows.Forms;
+using System.IO;
+using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
 
 namespace WinFormsSaleHouses
 {
@@ -157,6 +162,13 @@ namespace WinFormsSaleHouses
             {
                 Cursor = Cursors.WaitCursor;
 
+                // Получаем данные для документа
+                string buyerName = cmbBuyer.Text;
+                string realtorName = cmbRealtor.Text;
+                decimal finalAmount = decimal.Parse(txtFinalAmount.Text);
+                decimal commission = decimal.Parse(txtCommission.Text);
+                DateTime transactionDate = dtpTransactionDate.Value;
+
                 // Начинаем транзакцию
                 using (SqlConnection connection = new SqlConnection(dbHelper.GetConnectionString()))
                 {
@@ -173,12 +185,12 @@ namespace WinFormsSaleHouses
                                 (@TransactionDate, @PropertyId, @BuyerId, @RealtorId, @FinalAmount, @Commission)";
 
                         SqlCommand command = new SqlCommand(createTransactionQuery, connection, transaction);
-                        command.Parameters.AddWithValue("@TransactionDate", dtpTransactionDate.Value);
+                        command.Parameters.AddWithValue("@TransactionDate", transactionDate);
                         command.Parameters.AddWithValue("@PropertyId", propertyId);
                         command.Parameters.AddWithValue("@BuyerId", cmbBuyer.SelectedValue);
                         command.Parameters.AddWithValue("@RealtorId", cmbRealtor.SelectedValue);
-                        command.Parameters.AddWithValue("@FinalAmount", decimal.Parse(txtFinalAmount.Text));
-                        command.Parameters.AddWithValue("@Commission", decimal.Parse(txtCommission.Text));
+                        command.Parameters.AddWithValue("@FinalAmount", finalAmount);
+                        command.Parameters.AddWithValue("@Commission", commission);
                         command.ExecuteNonQuery();
 
                         // 2. Обновляем статус недвижимости
@@ -190,7 +202,16 @@ namespace WinFormsSaleHouses
 
                         transaction.Commit();
 
-                        MessageBox.Show("Сделка успешно создана!", "Успех",
+                        // 3. Генерируем Word-документ
+                        GenerateTransactionDocument(
+                            buyerName,
+                            realtorName,
+                            propertyAddress,
+                            finalAmount,
+                            commission,
+                            transactionDate);
+
+                        MessageBox.Show("Сделка успешно создана! Документ сохранен в папке 'Документы'.", "Успех",
                             MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                         this.DialogResult = DialogResult.OK;
@@ -212,6 +233,160 @@ namespace WinFormsSaleHouses
             {
                 Cursor = Cursors.Default;
             }
+        }
+
+        private void GenerateTransactionDocument(
+            string buyerName,
+            string realtorName,
+            string propertyAddress,
+            decimal finalAmount,
+            decimal commission,
+            DateTime transactionDate)
+        {
+            try
+            {
+                // Создаем папку для документов, если ее нет
+                string documentsFolder = Path.Combine(Application.StartupPath, "Документы");
+                if (!Directory.Exists(documentsFolder))
+                {
+                    Directory.CreateDirectory(documentsFolder);
+                }
+
+                // Генерируем имя файла
+                string fileName = $"Сделка_{propertyAddress.Replace(" ", "_").Replace(",", "")}_{DateTime.Now:yyyyMMdd_HHmmss}.docx";
+                string filePath = Path.Combine(documentsFolder, fileName);
+
+                // Создаем Word-документ
+                using (WordprocessingDocument wordDocument = WordprocessingDocument.Create(filePath, WordprocessingDocumentType.Document))
+                {
+                    // Добавляем основную часть документа
+                    MainDocumentPart mainPart = wordDocument.AddMainDocumentPart();
+                    mainPart.Document = new Document();
+                    Body body = new Body();
+
+                    // Заголовок
+                    Paragraph titleParagraph = new Paragraph();
+                    Run titleRun = new Run();
+                    Text titleText = new Text("ДОГОВОР КУПЛИ-ПРОДАЖИ НЕДВИЖИМОСТИ");
+                    titleRun.Append(titleText);
+                    titleRun.RunProperties = new RunProperties(
+                        new Bold(),
+                        new FontSize() { Val = "28" },
+                        new Justification() { Val = JustificationValues.Center }
+                    );
+                    titleParagraph.Append(titleRun);
+                    body.Append(titleParagraph);
+
+                    // Пустая строка
+                    body.Append(new Paragraph(new Run(new Text(""))));
+
+                    // Даты
+                    Paragraph dateParagraph = new Paragraph();
+                    Run dateRun = new Run();
+                    Text dateText = new Text($"Дата заключения сделки: {transactionDate:dd.MM.yyyy}");
+                    dateRun.Append(dateText);
+                    dateParagraph.Append(dateRun);
+                    body.Append(dateParagraph);
+
+                    // Пустая строка
+                    body.Append(new Paragraph(new Run(new Text(""))));
+
+                    // Информация о сделке в таблице
+                    Table table = new Table();
+
+                    // Настройки таблицы
+                    TableProperties tableProperties = new TableProperties(
+                        new TableBorders(
+                            new TopBorder() { Val = new EnumValue<BorderValues>(BorderValues.Single), Size = 4 },
+                            new BottomBorder() { Val = new EnumValue<BorderValues>(BorderValues.Single), Size = 4 },
+                            new LeftBorder() { Val = new EnumValue<BorderValues>(BorderValues.Single), Size = 4 },
+                            new RightBorder() { Val = new EnumValue<BorderValues>(BorderValues.Single), Size = 4 },
+                            new InsideHorizontalBorder() { Val = new EnumValue<BorderValues>(BorderValues.Single), Size = 2 },
+                            new InsideVerticalBorder() { Val = new EnumValue<BorderValues>(BorderValues.Single), Size = 2 }
+                        )
+                    );
+                    table.AppendChild(tableProperties);
+
+                    // Добавляем строки с информацией
+                    AddTableRow(table, "Покупатель:", buyerName);
+                    AddTableRow(table, "Риелтор:", realtorName);
+                    AddTableRow(table, "Объект недвижимости:", propertyAddress);
+                    AddTableRow(table, "Сумма сделки:", $"{finalAmount:C2}");
+                    AddTableRow(table, "Комиссия риелтора:", $"{commission:C2}");
+                    AddTableRow(table, "Итоговая сумма:", $"{(finalAmount + commission):C2}");
+
+                    body.Append(table);
+
+                    // Пустая строка
+                    body.Append(new Paragraph(new Run(new Text(""))));
+
+                    // Условия сделки
+                    Paragraph termsParagraph = new Paragraph();
+                    Run termsRun = new Run();
+                    Text termsText = new Text("Условия сделки:\n" +
+                        "1. Покупатель обязуется оплатить указанную сумму в течение 5 банковских дней.\n" +
+                        "2. Риелтор гарантирует юридическую чистоту сделки.\n" +
+                        "3. Все расходы по оформлению документов несет покупатель.\n" +
+                        "4. Сделка считается завершенной после полной оплаты и регистрации в Росреестре.");
+                    termsRun.Append(termsText);
+                    termsParagraph.Append(termsRun);
+                    body.Append(termsParagraph);
+
+                    // Пустая строка
+                    body.Append(new Paragraph(new Run(new Text(""))));
+
+                    // Подписи
+                    Paragraph signaturesParagraph = new Paragraph();
+                    Run signaturesRun = new Run();
+                    Text signaturesText = new Text("Подписи сторон:\n\n" +
+                        "__________________________          __________________________\n" +
+                        "Покупатель                                     Риелтор\n\n" +
+                        $"Дата: {DateTime.Now:dd.MM.yyyy}");
+                    signaturesRun.Append(signaturesText);
+                    signaturesParagraph.Append(signaturesRun);
+                    body.Append(signaturesParagraph);
+
+                    // Добавляем тело к документу
+                    mainPart.Document.Append(body);
+                    mainPart.Document.Save();
+                }
+
+                // Показываем сообщение об успешном создании
+                MessageBox.Show($"Документ сохранен по пути:\n{filePath}", "Документ создан",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Ошибка при создании документа: {ex.Message}", "Ошибка",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                // Не прерываем выполнение, так как сделка уже создана
+            }
+        }
+
+        private void AddTableRow(Table table, string header, string value)
+        {
+            TableRow row = new TableRow();
+
+            TableCell cell1 = new TableCell();
+            Paragraph para1 = new Paragraph();
+            Run run1 = new Run();
+            Text text1 = new Text(header);
+            run1.Append(text1);
+            run1.RunProperties = new RunProperties(new Bold());
+            para1.Append(run1);
+            cell1.Append(para1);
+
+            TableCell cell2 = new TableCell();
+            Paragraph para2 = new Paragraph();
+            Run run2 = new Run();
+            Text text2 = new Text(value);
+            run2.Append(text2);
+            para2.Append(run2);
+            cell2.Append(para2);
+
+            row.Append(cell1, cell2);
+            table.Append(row);
         }
 
         private void BtnCancel_Click(object sender, EventArgs e)
