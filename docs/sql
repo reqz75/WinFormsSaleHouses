@@ -1,0 +1,104 @@
+CREATE DATABASE Popov1DB;
+USE Popov1DB;
+GO
+
+--cоздание таблиц 
+CREATE TABLE Readers (
+    ReaderID INT PRIMARY KEY IDENTITY(1,1),
+    FullName TEXT NOT NULL,
+    Address TEXT,
+    Phone TEXT
+);
+
+CREATE TABLE Books (
+    BookID INT PRIMARY KEY IDENTITY(1,1),
+    Title TEXT NOT NULL,
+    Author TEXT NOT NULL,
+    YearPublished INT,
+    Genre TEXT,
+    QuantityAvailable INT DEFAULT 1
+);
+
+CREATE TABLE Issues (
+    IssueID INT PRIMARY KEY IDENTITY(1,1),
+    ReaderID INT NOT NULL,
+    BookID INT NOT NULL,
+    IssueDate DATE DEFAULT GETDATE(),
+    ReturnDate DATE NULL,
+    CONSTRAINT FK_Issues_Reader FOREIGN KEY (ReaderID) REFERENCES Readers(ReaderID),
+    CONSTRAINT FK_Issues_Book FOREIGN KEY (BookID) REFERENCES Books(BookID)
+);
+GO
+
+--заполнение тестовыми данными
+INSERT INTO Readers (FullName, Address, Phone) VALUES
+('Иванов Иван Иванович',      'ул. Ленина, д.5',           '+79123456789'),
+('Петрова Анна Сергеевна',    'пр. Мира, д.12',             '+79031234567'),
+('Сидоров Дмитрий Александрович', 'ул. Пушкина, д.8',      '+79567891234'),
+('Козлова Мария Владимировна','ул. Гагарина, д.23',        '+79105678901'),
+('Николаев Сергей Петрович',  'пер. Солнечный, д.7',       '+79991234567'),
+('Фёдорова Елена Михайловна', 'ул. Центральная, д.15',     '+79037894561'),
+('Морозов Алексей Викторович','ул. Юбилейная, д.3',        '+79119876543');
+GO
+
+INSERT INTO Books (Title, Author, YearPublished, Genre, QuantityAvailable) VALUES
+('Война и мир',                 'Лев Толстой',          1869, 'Роман',          5),
+('Преступление и наказание',    'Фёдор Достоевский',    1866, 'Роман',          4),
+('1984',                        'Джордж Оруэлл',        1949, 'Антиутопия',     3),
+('Мастер и Маргарита',          'Михаил Булгаков',      1967, 'Роман',          6),
+('Гарри Поттер и философский камень', 'Джоан Роулинг',  1997, 'Фэнтези',       10),
+('Тихий Дон',                   'Михаил Шолохов',       1940, 'Роман-эпопея',   2),
+('Анна Каренина',               'Лев Толстой',          1877, 'Роман',          4),
+('Дубровский',                  'Александр Пушкин',     1841, 'Повесть',        7);
+GO
+
+INSERT INTO Issues (ReaderID, BookID, IssueDate, ReturnDate) VALUES
+(1, 1, '2025-10-15', '2025-11-10'),
+(2, 3, '2025-11-01', NULL),
+(3, 4, '2025-11-20', NULL),
+(4, 2, '2025-09-25', '2025-10-20'),
+(1, 5, '2025-11-25', NULL),
+(5, 1, '2025-11-10', '2025-12-05'),
+(6, 6, '2025-10-30', NULL),
+(7, 8, '2025-11-15', NULL),
+(2, 4, '2025-10-05', '2025-11-02'),
+(3, 7, '2025-11-28', NULL);
+GO
+
+--запросы
+--какие книги сейчас на руках у читателей
+SELECT r.FullName, b.Title, i.IssueDate
+FROM Issues i
+JOIN Readers r ON i.ReaderID = r.ReaderID
+JOIN Books b ON i.BookID = b.BookID
+WHERE i.ReturnDate IS NULL
+ORDER BY i.IssueDate DESC;
+
+--все книги Льва Толстого и кто их брал
+SELECT b.Title, r.FullName, i.IssueDate, i.ReturnDate
+FROM Books b
+LEFT JOIN Issues i ON b.BookID = i.BookID
+LEFT JOIN Readers r ON i.ReaderID = r.ReaderID
+WHERE b.Author = 'Лев Толстой'
+ORDER BY b.Title;
+
+--топ-5 самых читаемых книг
+SELECT TOP 5 b.Title, b.Author, COUNT(i.IssueID) AS Количество_выдач
+FROM Books b
+LEFT JOIN Issues i ON b.BookID = i.BookID
+GROUP BY b.BookID, b.Title, b.Author
+ORDER BY Количество_выдач DESC;
+
+--читатели, у которых сейчас больше одной книги
+SELECT r.FullName, COUNT(*) AS Книг_на_руках
+FROM Issues i
+JOIN Readers r ON i.ReaderID = r.ReaderID
+WHERE i.ReturnDate IS NULL
+GROUP BY r.ReaderID, r.FullName
+HAVING COUNT(*) > 1;
+
+--книги жанра «Роман», вышедшие после 1900 года
+SELECT Title, Author, YearPublished
+FROM Books
+WHERE Genre = 'Роман' AND YearPublished > 1900
+ORDER BY YearPublished DESC;
